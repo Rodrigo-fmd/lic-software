@@ -19,13 +19,13 @@ object HAL {
         UsbPort.write(output)
     }
 
-    // Coloca os bits representados por mask no valor lógico '1'
+    // Coloca os bits representados por mask no valor logico '1'
     fun setBits(mask : Int){
         output = mask.or(output)
         UsbPort.write(output)
     }
 
-    // Coloca os bits representados por mask no valor lógico '0'
+    // Coloca os bits representados por mask no valor logico '0'
     fun clrBits(mask : Int){
         output = (mask.inv()).and(output)
         UsbPort.write(output)
@@ -38,6 +38,6 @@ fun main() {
     HAL.setBits(0b00000001) // Define o bit 0
     HAL.clrBits(0b00000001) // Limpa o bit 0
     HAL.writeBits(0b00010001, 0b00000001) // Escreve o bit 0 com valor 1
-    HAL.isBit(0b00000001) // Verifica se o bit 0 está definido
-    HAL.readBits(0b00001111) // Lê os bits 0 a 3
+    HAL.isBit(0b00000001) // Verifica se o bit 0 esta definido
+    HAL.readBits(0b00001111) // Le os bits 0 a 3
 }

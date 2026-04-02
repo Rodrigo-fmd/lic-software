@@ -1,4 +1,4 @@
-// Ler teclas. Funções retornam '0' ... '9', 'A' ... 'D', ’#’, ’*’ ou NONE.
+// Ler teclas. Funções retornam '0' ... '9', 'A' ... 'D', '#', '*' ou NONE.
 object KBD {
 
     const val NONE = 0
