@@ -1,4 +1,4 @@
-0.85;0;Santa Apolonia
+0.85;1;Santa Apolonia
 1.1;0;Gare do Oriente
 0.95;0;Entrecampos
 0.85;0;Roma-Areeiro
