@@ -1,0 +1,18 @@
+1 Santa Apolonia 0.85
+2 Gare do Oriente 1.10
+3 Entrecampos 0.95
+4 Roma-Areeiro 0.85
+5 Sete Rios 0.80
+6 Campolide 0.70
+7 Alcantara-Terra 0.90
+8 Alcantara-Mar 0.60
+9 Cais do Sodre 0.75
+10 Benfica 1.20
+11 Braco de Prata 0.70
+12 Marvila 0.60
+13 Chelas 0.90
+14 Belem 1.10
+15 Alges 0.80
+16 Cascais 2.50
+17 Sintra 2.80
+18 Rossio 1.00

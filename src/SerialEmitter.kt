@@ -2,7 +2,7 @@
 object SerialEmitter{
 
     const val SELECT_LCD = 0x04
-    //const val SELECT_TICKET
+    const val SELECT_TICKET = 0x08
     const val DATA_SIZE = 10
     const val CLOCK_MASK = 0x02
     const val SDX_MASK = 0x01
@@ -23,10 +23,10 @@ object SerialEmitter{
          when(addr) {
             Peripheral.LCD -> {
                 HAL.clrBits(SELECT_LCD)
-                //HAL.setBits(SELECT_TICKET)
+                HAL.setBits(SELECT_TICKET)
             }
             Peripheral.TICKET -> {
-                //HAL.clrBits(SELECT_TICKET)
+                HAL.clrBits(SELECT_TICKET)
                 HAL.setBits(SELECT_LCD)
             }
         }
@@ -42,7 +42,8 @@ object SerialEmitter{
             HAL.clrBits(CLOCK_MASK)
         }
 
-            HAL.setBits(SELECT_LCD)
+        if (addr == Peripheral.LCD )HAL.setBits(SELECT_LCD)
+        else HAL.setBits(SELECT_TICKET)
     }
 
     // Retorna informacao se o periferico esta ocupado
