@@ -76,6 +76,7 @@ fun main() {
     KBD.init()
     LCD.init()
     LCD.clear()
+    Time.sleep(2000)
     LCD.cursor(0, 0)
     LCD.write("Hello, World!")
 }
