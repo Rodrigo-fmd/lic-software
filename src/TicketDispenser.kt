@@ -2,7 +2,7 @@
 object TicketDispenser{
 
     const val PRT = 0x200
-    const val FN = 0x0f
+    const val FN = 0x40
     // Inicia a classe, estabelecendo os valores iniciais.
     fun init() {
         SerialEmitter.init()

@@ -46,183 +46,120 @@ object TUI {
             if (dirty) {
                 when (mode) {
                     MenuMode.HOME -> showCentered("Buy ticket", "#=ID *=LIST")
-                    MenuMode.ID -> showCentered("Enter station ID", "ID:$digits #=OK *=BK")
-                    MenuMode.LIST -> {
-                        val station = sorted[index]
-                        showCentered(station.name, "#=CONFIRM *=BACK")
-                    }
+                    MenuMode.ID   -> showCentered("Enter station ID", "ID:$digits #=OK *=BK")
+                    MenuMode.LIST -> showCentered(sorted[index].name, "#=CONFIRM *=BACK")
                 }
                 dirty = false
             }
 
             when (val key = KBD.waitKey(80)) {
                 KBD.NONE.toChar() -> {}
-
-                '#' -> {
-                    when (mode) {
-                        MenuMode.HOME -> {
-                            mode = MenuMode.ID
-                            digits = ""
-                            dirty = true
-                        }
-
-                        MenuMode.ID -> {
-                            val selected = digits.toIntOrNull()?.let { byId[it] }
-                            if (selected != null) {
-                                return selected
-                            } else {
-                                showCentered("Unknown ID", "Try again")
-                                Time.sleep(1000)
-                                digits = ""
-                                dirty = true
-                            }
-                        }
-
-                        MenuMode.LIST -> {
-                            val selected = sorted[index]
-                            return selected
-                        }
+                '#' -> when (mode) {
+                    MenuMode.HOME -> { mode = MenuMode.ID; digits = ""; dirty = true }
+                    MenuMode.ID   -> {
+                        val selected = digits.toIntOrNull()?.let { byId[it] }
+                        if (selected != null) return selected
+                        else { showCentered("Unknown ID", "Try again"); Time.sleep(1000); digits = ""; dirty = true }
                     }
+                    MenuMode.LIST -> return sorted[index]
                 }
-
-                '*' -> {
-                    when (mode) {
-                        MenuMode.HOME -> {
-                            mode = MenuMode.LIST
-                            dirty = true
-                        }
-
-                        MenuMode.ID -> {
-                            mode = MenuMode.HOME
-                            digits = ""
-                            dirty = true
-                        }
-
-                        MenuMode.LIST -> {
-                            mode = MenuMode.HOME
-                            dirty = true
-                        }
-                    }
+                '*' -> when (mode) {
+                    MenuMode.HOME -> { mode = MenuMode.LIST; dirty = true }
+                    MenuMode.ID   -> { mode = MenuMode.HOME; digits = ""; dirty = true }
+                    MenuMode.LIST -> { mode = MenuMode.HOME; dirty = true }
                 }
-
-                'A' -> {
-                    if (mode == MenuMode.LIST && index > 0) {
-                        index--
-                        dirty = true
-                    }
-                }
-
-                'B' -> {
-                    if (mode == MenuMode.LIST && index < sorted.lastIndex) {
-                        index++
-                        dirty = true
-                    }
-                }
-
-                in '0'..'9' -> {
-                    if (mode == MenuMode.ID) {
-                        digits += key
-                        dirty = true
-                    }
-                }
-
+                'A' -> if (mode == MenuMode.LIST && index > 0) { index--; dirty = true }
+                'B' -> if (mode == MenuMode.LIST && index < sorted.lastIndex) { index++; dirty = true }
+                in '0'..'9' -> if (mode == MenuMode.ID) { digits += key; dirty = true }
                 else -> {}
             }
         }
     }
 
     /**
-     * Gerencia a fase de pagamento: calcula o preço entre origin e dest (somando as paragens
-     * entre origem e destino, excluindo a origem), permite inserir moedas e alternar tipo
-     * de bilhete (ida/ida-volta com '*'). '#' cancela a compra e devolve. Quando o montante
-     * inserido é suficiente, inicia a impressão e espera que o utilizador recolha o bilhete.
-     * Retorna true se a compra foi concluída, false se cancelada.
+     * Fase de pagamento usando o CoinAcceptor.
+     * Lê moedas em loop até ter valor suficiente.
+     * '#' cancela, '*' alterna ida/ida-volta.
      */
     fun buyPhase(
         origin: Station,
         dest: Station,
         stations: List<Station>,
         testMode: Boolean = false,
-        coinCounters: MutableMap<Double, Int>? = null,
+        coinCounters: MutableMap<Float, Int>? = null,
         ticketCounters: MutableMap<String, Int>? = null
     ): Boolean {
-        // encontrar índices
         val sorted = stations.sortedBy { it.id }
         val start = sorted.indexOfFirst { it.id == origin.id }
-        val end = sorted.indexOfFirst { it.id == dest.id }
+        val end   = sorted.indexOfFirst { it.id == dest.id }
 
         val basePrice = if (start == end) 0.0 else {
             if (start < end) sorted.subList(start + 1, end + 1).sumOf { it.price }
-            else sorted.subList(end, start).sumOf { it.price }
+            else             sorted.subList(end, start).sumOf { it.price }
         }
 
         var roundTrip = false
-        var total = basePrice
-        var inserted = 0.0
-        val insertedCoins = mutableMapOf<Double, Int>()
-
-        // moedas: teclas 1,2,5,0 -> 0.10,0.20,0.50,1.00 euros
-        val coins = mapOf('1' to 0.1, '2' to 0.2, '5' to 0.5, '0' to 1.0)
+        var total     = basePrice
+        var inserted  = 0.0
+        // conta quantas moedas de cada valor foram inseridas nesta compra
+        val insertedCoins = mutableMapOf<Float, Int>()
 
         if (testMode) {
             return printingPhase(origin, dest, roundTrip, total, total)
         }
 
-        // iremos actualizar o ecrã apenas quando o texto mudar para evitar piscar
-        var prevTop = ""
+        var prevTop    = ""
         var prevBottom = ""
 
-        while (true) {
-            // preparar as linhas a mostrar
-            val top = if (roundTrip) "RoundTrip ${"%.2f".format(total)}" else "Single ${"%.2f".format(total)}"
+        while (inserted < total) {
+            val top    = if (roundTrip) "RoundTrip ${"%.2f".format(total)}" else "Single ${"%.2f".format(total)}"
             val bottom = "In:${"%.2f".format(inserted)} #=Cancel"
-            // só actualizar o LCD quando houver alteração de texto
+
             if (top != prevTop || bottom != prevBottom) {
                 showCentered(top, bottom)
-                prevTop = top
+                prevTop    = top
                 prevBottom = bottom
             }
 
-            val key = KBD.waitKey(200)
-            when (key) {
-                KBD.NONE.toChar() -> {}
+            // Teclas: só para cancelar ou alternar tipo de bilhete
+            when (KBD.getKey()) {
                 '#' -> {
-                    // cancelar e devolver
-                    showCentered("Cancelled", "Refunded ${"%.2f".format(inserted)}")
+                    showCentered("Cancelled", "Refund ${"%.2f".format(inserted)}")
                     Time.sleep(1500)
                     return false
                 }
                 '*' -> {
                     roundTrip = !roundTrip
-                    total = basePrice * (if (roundTrip) 2.0 else 1.0)
+                    total     = basePrice * (if (roundTrip) 2.0 else 1.0)
+                    prevTop   = "" // forçar atualização do LCD
                 }
-                in coins.keys -> {
-                    val value = coins[key] ?: 0.0
-                    inserted += value
-                    insertedCoins[value] = (insertedCoins[value] ?: 0) + 1
-                    Time.sleep(200)
-                }
-                else -> {
-                    // ignorar outras teclas
-                }
+                else -> {}
             }
 
-            if (inserted >= total) {
-                // suficiente -> iniciar impressão
-                val ok = printingPhase(origin, dest, roundTrip, total, inserted)
-                if (ok) {
-                    coinCounters?.let { counters ->
-                        for ((value, count) in insertedCoins) {
-                            counters[value] = (counters[value] ?: 0) + count
-                        }
-                    }
-                    ticketCounters?.let { counters ->
-                        counters[dest.name] = (counters[dest.name] ?: 0) + 1
-                    }
-                }
-                return ok
+            // Ler moeda do CoinAcceptor — retorna o valor em euros ou -1.0
+            val coinValue = CoinAcceptor.addCoins()
+            if (coinValue > 0) {
+                inserted += coinValue
+                // incrementar o contador desta denominação
+                insertedCoins[coinValue] = (insertedCoins[coinValue] ?: 0) + 1
+                prevTop = "" // forçar atualização do LCD com novo valor
             }
         }
+
+        // Valor suficiente — avançar para impressão
+        val ok = printingPhase(origin, dest, roundTrip, total, inserted)
+        if (ok) {
+            // Somar as moedas desta compra aos contadores globais
+            coinCounters?.let { counters ->
+                for ((value, count) in insertedCoins) {
+                    counters[value] = (counters[value] ?: 0) + count
+                }
+            }
+            ticketCounters?.let { counters ->
+                counters[dest.name] = (counters[dest.name] ?: 0) + 1
+            }
+        }
+        return ok
     }
 
     /**
@@ -232,20 +169,16 @@ object TUI {
      */
     private fun printingPhase(origin: Station, dest: Station, roundTrip: Boolean, total: Double, inserted: Double): Boolean {
         val ticketType = if (roundTrip) "RoundTrip" else "Single"
-        val change = inserted - total
 
         // Mostrar tipo de bilhete e origem
         showCentered(ticketType, origin.name)
         Time.sleep(2000)
-
         // Mostrar destino
         showCentered("Destination", dest.name)
         Time.sleep(2000)
-
         // Mostrar preço e troco
         showCentered("Total:${"%.2f".format(total)}", "")
         Time.sleep(2000)
-
         // Iniciar impressão, mostrando estado
         showCentered("Printing...", "Please wait...")
         Time.sleep(2000)

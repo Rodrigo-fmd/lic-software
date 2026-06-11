@@ -2,17 +2,34 @@
 object KBD {
 
     const val NONE = 0
+    private const val MASK_RXD= 0x0
+    private const val MASK_RXCLOCK = 0x80
+    private const val MASK_KEY_BITS = 0x1E
+    private const val KEYS = "147*2580369#ABCD"
     private const val DVAL_MASK = 0x10
     private const val KEY_CODE_MASK = 0xF
     private const val ACK_MASK = 0x80
-    private const val KEYS = "147*2580369#ABCD"
-
     // Inicia a classe
-    fun init() = HAL.clrBits(ACK_MASK)
+    fun init() = HAL.clrBits(ACK_MASK) //HAL.setBits(MASK_RXCLOCK)
 
 
 
     // Retorna de imediato a tecla premida ou NONE se nao ha tecla premida.
+ /*   fun getKey(): Char {
+        var trama = 0
+
+        if (!HAL.isBit(MASK_RXD)) {
+            for (i in 0 until 7) {
+                HAL.setBits(MASK_RXCLOCK)
+                trama = trama or (HAL.readBits(MASK_RXD) shl i)
+                HAL.clrBits(MASK_RXCLOCK)
+            }
+            val keyCode = (trama and MASK_KEY_BITS) shr 1
+            return KEYS[keyCode]
+        }
+        return NONE.toChar()
+    }*/
+
     fun getKey(): Char {
         if (HAL.isBit(DVAL_MASK)) {
             val key = HAL.readBits(KEY_CODE_MASK)
