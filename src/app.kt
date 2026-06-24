@@ -1,7 +1,7 @@
 import isel.leic.utils.Time
 import kotlin.random.Random
 
-private val COIN_ORDER = listOf(1.0f, 0.5f, 0.2f, 0.1f)
+private val COIN_ORDER = listOf(2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.05f)
 
 private data class StatsState(
     val coinCounters: MutableMap<Float, Int>,
@@ -33,7 +33,7 @@ private fun showTicketCounters(stations: List<Station>, stats: StatsState) {
             dirty = false
         }
 
-        when (KBD.waitKey(200)) {
+        when (TUI.waitKey(200)) {
             'A' -> if (index > 0) { index--; dirty = true }
             'B' -> if (index < sorted.lastIndex) { index++; dirty = true }
             '#', '*' -> return
@@ -42,7 +42,6 @@ private fun showTicketCounters(stations: List<Station>, stats: StatsState) {
 }
 
 private fun showCoinCounters(stats: StatsState) {
-    if (COIN_ORDER.isEmpty()) return
     var index = 0
     var dirty = true
 
@@ -54,7 +53,7 @@ private fun showCoinCounters(stats: StatsState) {
             dirty = false
         }
 
-        when (KBD.waitKey(200)) {
+        when (TUI.waitKey(200)) {
             'A' -> if (index > 0) { index--; dirty = true }
             'B' -> if (index < COIN_ORDER.lastIndex) { index++; dirty = true }
             '#', '*' -> return
@@ -83,7 +82,7 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
         val (key, desc) = menuOptions[menuIndex]
         TUI.showCentered(desc, "Press $key")
 
-        when (KBD.waitKey(200)) {
+        when (TUI.waitKey(200)) {
             '#' -> {
                 val dest = TUI.buyMenu(stations)
                 if (dest != null) {
@@ -94,7 +93,7 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
             'B' -> showCoinCounters(stats)
             'C' -> {
                 TUI.showCentered("Reset counters", "*=Confirm")
-                if (KBD.waitKey(3000) == '*') {
+                if (TUI.waitKey(3000) == '*') {
                     for (value in COIN_ORDER) stats.coinCounters[value] = 0
                     for (name in stats.ticketCounters.keys) stats.ticketCounters[name] = 0
                     saveStats(stations, stats)
@@ -104,7 +103,7 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
             }
             'D' -> {
                 TUI.showCentered("Shutdown", "#=Confirm")
-                if (KBD.waitKey(3000) == '#') {
+                if (TUI.waitKey(3000) == '#') {
                     saveStats(stations, stats)
                     TUI.showCentered("Saving...", "Bye")
                     Time.sleep(500)
@@ -118,40 +117,25 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
 }
 
 fun main() {
-    HAL.init()
-    SerialEmitter.init()
-    KBD.init()
-    LCD.init()
+    TUI.init()
+    TicketDispenser.init()
 
     val stationList = Stations.load("stations.txt")
-
     val currentStation = stationList[Random.nextInt(stationList.size)]
     val stats = loadStats(stationList)
+    var swapText = 0
 
     while (true) {
+
         if (maintenance.on()) {
             if (runMaintenance(currentStation, stationList, stats)) return
             continue
         }
 
-        TUI.initialScreen(currentStation.name)
-        if (KBD.waitKey(2000) == '#') {
-            val dest = TUI.buyMenu(stationList)
-            if (dest != null) {
-                val ok = TUI.buyPhase(
-                    currentStation,
-                    dest,
-                    stationList,
-                    testMode = false,
-                    coinCounters = stats.coinCounters,
-                    ticketCounters = stats.ticketCounters
-                )
-                if (ok) saveStats(stationList, stats)
-            }
-        }
+        if(swapText % 2 == 0) TUI.showCentered("Welcome!", currentStation.name)
+        else TUI.showCentered("Press # to buy","the ticket" )
 
-        TUI.showCentered("Press # to buy","the ticket" )
-        if (KBD.waitKey(2000) == '#') {
+        if (TUI.waitKey(2000) == '#') {
             val dest = TUI.buyMenu(stationList)
             if (dest != null) {
                 val ok = TUI.buyPhase(
@@ -165,5 +149,6 @@ fun main() {
                 if (ok) saveStats(stationList, stats)
             }
         }
+        swapText++
     }
 }

@@ -8,6 +8,11 @@ object TUI {
 
     private enum class MenuMode { HOME, ID, LIST }
 
+    fun init(){
+        KBD.init()
+        LCD.init()
+    }
+
     private fun centeredLine(text: String): String {
         if (text.length >= LCD.COLS) return text.take(LCD.COLS)
         val left = (LCD.COLS - text.length) / 2
@@ -15,6 +20,9 @@ object TUI {
         return " ".repeat(left) + text + " ".repeat(right)
     }
 
+    fun waitKey(timeout: Long): Char {
+        return KBD.waitKey(timeout)
+    }
     fun showCentered(top: String, bottom: String) {
         // avoid clearing/writing the LCD when content didn't change
         if (top == prevTopShown && bottom == prevBottomShown) return
@@ -25,13 +33,6 @@ object TUI {
         LCD.write(centeredLine(top))
         LCD.cursor(1, 0)
         LCD.write(centeredLine(bottom))
-    }
-
-    /**
-     * Mostra a tela inicial: "Welcome" centrado na linha 0 e nome da estação na linha 1.
-     */
-    fun initialScreen(stationName: String) {
-        showCentered("Welcome!", stationName)
     }
 
     fun buyMenu(stations: List<Station>): Station? {
@@ -122,8 +123,9 @@ object TUI {
             }
 
             // Teclas: só para cancelar ou alternar tipo de bilhete
-            when (KBD.getKey()) {
+            when (KBD.waitKey(100)) {
                 '#' -> {
+                    CoinAcceptor.ejectCoins()
                     showCentered("Cancelled", "Refund ${"%.2f".format(inserted)}")
                     Time.sleep(1500)
                     return false
@@ -133,7 +135,7 @@ object TUI {
                     total     = basePrice * (if (roundTrip) 2.0 else 1.0)
                     prevTop   = "" // forçar atualização do LCD
                 }
-                else -> {}
+                else -> CoinAcceptor.collectCoins()
             }
 
             // Ler moeda do CoinAcceptor — retorna o valor em euros ou -1.0
@@ -197,10 +199,11 @@ object TUI {
                 showCentered(top, bottom)
                 prevBottom = bottom
             }
-            val key = KBD.waitKey(200)
+            val key = KBD.waitKey(4000)
             if (key == '#') {
                 // Utilizador cancelou durante impressão
-                showCentered("Cancelled", "Refunded ${"%.2f".format(inserted)}")
+                CoinAcceptor.ejectCoins()
+                showCentered("Cancelled", "refund ${"%.2f".format(inserted)}")
                 Time.sleep(1500)
                 return false
             }

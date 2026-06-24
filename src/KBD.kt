@@ -2,47 +2,44 @@
 object KBD {
 
     const val NONE = 0
-    private const val MASK_RXD= 0x0
+    private const val MASK_RXD= 0x80
     private const val MASK_RXCLOCK = 0x80
     private const val MASK_KEY_BITS = 0x1E
     private const val KEYS = "147*2580369#ABCD"
-    private const val DVAL_MASK = 0x10
-    private const val KEY_CODE_MASK = 0xF
-    private const val ACK_MASK = 0x80
     // Inicia a classe
-    fun init() = HAL.clrBits(ACK_MASK) //HAL.setBits(MASK_RXCLOCK)
+    fun init() {
+        HAL.init()
+        HAL.clrBits(MASK_RXCLOCK)
+    }
 
 
 
     // Retorna de imediato a tecla premida ou NONE se nao ha tecla premida.
- /*   fun getKey(): Char {
-        var trama = 0
+    fun getKey(): Char {
 
-        if (!HAL.isBit(MASK_RXD)) {
-            for (i in 0 until 7) {
+        if (!HAL.isBit(MASK_RXD)) { // deteta início de transmissão
+            var keycode = 0
+
+            HAL.setBits(MASK_RXCLOCK) // Consome o start bit
+            HAL.clrBits(MASK_RXCLOCK)
+
+            for (i in 0 until 4) {  // ler keycode
                 HAL.setBits(MASK_RXCLOCK)
-                trama = trama or (HAL.readBits(MASK_RXD) shl i)
                 HAL.clrBits(MASK_RXCLOCK)
+                val bit = if (HAL.isBit(MASK_RXD)) 1 else 0
+                keycode = keycode or (bit shl i)
             }
-            val keyCode = (trama and MASK_KEY_BITS) shr 1
-            return KEYS[keyCode]
+
+            HAL.setBits(MASK_RXCLOCK) // Consome o stop bit
+            HAL.clrBits(MASK_RXCLOCK)
+            HAL.setBits(MASK_RXCLOCK) // estabiliza sinal rxd para idle (=1)
+            HAL.clrBits(MASK_RXCLOCK)
+
+            return KEYS[keycode]
         }
         return NONE.toChar()
-    }*/
-
-    fun getKey(): Char {
-        if (HAL.isBit(DVAL_MASK)) {
-            val key = HAL.readBits(KEY_CODE_MASK)
-            HAL.setBits(ACK_MASK)
-            while (HAL.isBit(DVAL_MASK)) {
-                // Espera que a tecla seja solta
-            }
-            HAL.clrBits(ACK_MASK)
-            return KEYS[key]
-        } else {
-            return NONE.toChar()
-        }
     }
+
 
     // Retorna a tecla premida, caso ocorra antes do 'timeout' (em milissegundos), ou NONE caso contrario.
     fun waitKey(timeout: Long) : Char{

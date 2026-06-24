@@ -1,7 +1,7 @@
 import isel.leic.utils.Time
 
 object maintenance {
-    private const val MAINTENANCE_MASK = 0x80
+    private const val MAINTENANCE_MASK = 0x40
 
     fun on(): Boolean{
         return HAL.isBit(MAINTENANCE_MASK)

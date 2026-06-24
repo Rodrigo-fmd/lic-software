@@ -34,6 +34,7 @@ object LCD {
 
     // Envia a sequencia de iniciacao para comunicacaoa 8 bits.
         fun init( ) {
+            SerialEmitter.init()
             Time.sleep(16)
             writeCMD(0x30) //set 8 bits
             Time.sleep(5)

@@ -6,7 +6,6 @@ object TicketDispenser{
     // Inicia a classe, estabelecendo os valores iniciais.
     fun init() {
         SerialEmitter.init()
-        //HAL.clrBits()
     }
 
     // Envia comando para dispensar um bilhete
