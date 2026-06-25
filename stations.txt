@@ -14,5 +14,3 @@
 14 Belem 1.10
 15 Alges 0.80
 16 Cascais 2.50
-17 Sintra 2.80
-18 Rossio 1.00

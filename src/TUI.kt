@@ -135,7 +135,7 @@ object TUI {
                     total     = basePrice * (if (roundTrip) 2.0 else 1.0)
                     prevTop   = "" // forçar atualização do LCD
                 }
-                else -> CoinAcceptor.collectCoins()
+                else -> { /* ignorar outras teclas */}
             }
 
             // Ler moeda do CoinAcceptor — retorna o valor em euros ou -1.0
@@ -152,6 +152,7 @@ object TUI {
         val ok = printingPhase(origin, dest, roundTrip, total, inserted)
         if (ok) {
             // Somar as moedas desta compra aos contadores globais
+            CoinAcceptor.collectCoins()
             coinCounters?.let { counters ->
                 for ((value, count) in insertedCoins) {
                     counters[value] = (counters[value] ?: 0) + count
@@ -184,7 +185,6 @@ object TUI {
         // Iniciar impressão, mostrando estado
         showCentered("Printing...", "Please wait...")
         Time.sleep(2000)
-        TicketDispenser.activatePrintingTicket(roundTrip, origin.id, dest.id)
 
         // Aguardar confirmação de impressão (com timeout)
         // Se o utilizador pressionar '#', cancela
@@ -208,6 +208,8 @@ object TUI {
                 return false
             }
         }
+
+        TicketDispenser.activatePrintingTicket(roundTrip, origin.id, dest.id)
 
         // Impressão concluída, mostrar instruções para recolher bilhete
         showCentered("Take ticket", "Press any key")

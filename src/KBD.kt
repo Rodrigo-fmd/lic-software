@@ -4,15 +4,12 @@ object KBD {
     const val NONE = 0
     private const val MASK_RXD= 0x80
     private const val MASK_RXCLOCK = 0x80
-    private const val MASK_KEY_BITS = 0x1E
     private const val KEYS = "147*2580369#ABCD"
     // Inicia a classe
     fun init() {
         HAL.init()
         HAL.clrBits(MASK_RXCLOCK)
     }
-
-
 
     // Retorna de imediato a tecla premida ou NONE se nao ha tecla premida.
     fun getKey(): Char {

@@ -5,8 +5,8 @@ object CoinAcceptor {
     private const val MASK_COIN_ID = 0x7
     private const val MASK_COIN = 0x8
     private const val MASK_ACCEPT = 0x10
-    private const val MASK_COLLECT = 0x80
-    private const val MASK_EJECT = 0x40
+    private const val MASK_COLLECT = 0x40
+    private const val MASK_EJECT = 0x20
 
     // coin
     fun addCoins(): Float {
