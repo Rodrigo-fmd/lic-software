@@ -19,7 +19,6 @@ object TicketDispenser{
 
         while (true) {
             if (HAL.isBit(FN)) {
-                println("entrei")
                 trama = trama.xor(PRT)
                 SerialEmitter.send(SerialEmitter.Peripheral.TICKET, trama)
                 break

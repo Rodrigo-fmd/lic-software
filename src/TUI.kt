@@ -23,6 +23,21 @@ object TUI {
     fun waitKey(timeout: Long): Char {
         return KBD.waitKey(timeout)
     }
+
+    fun showTop(top: String) {
+        if (top == prevTopShown) return
+        prevTopShown = top
+        LCD.cursor(0, 0)
+        LCD.write(centeredLine(top))
+    }
+
+    fun showBottom(bottom: String) {
+        if (bottom == prevBottomShown) return
+        prevBottomShown = bottom
+        LCD.cursor(1, 0)
+        LCD.write(centeredLine(bottom))
+    }
+
     fun showCentered(top: String, bottom: String) {
         // avoid clearing/writing the LCD when content didn't change
         if (top == prevTopShown && bottom == prevBottomShown) return
@@ -35,9 +50,9 @@ object TUI {
         LCD.write(centeredLine(bottom))
     }
 
-    fun buyMenu(stations: List<Station>): Station? {
-        val sorted = stations.sortedBy { it.id }
-        val byId = sorted.associateBy { it.id }
+    fun buyMenu(stations: List<Station>, currentStationId: Int): Station? {
+        val sorted = stations.filter { it.id != currentStationId }.sortedBy { it.id }
+        val byId = stations.associateBy { it.id }
         var mode = MenuMode.HOME
         var digits = ""
         var index = 0
@@ -59,7 +74,14 @@ object TUI {
                     MenuMode.HOME -> { mode = MenuMode.ID; digits = ""; dirty = true }
                     MenuMode.ID   -> {
                         val selected = digits.toIntOrNull()?.let { byId[it] }
-                        if (selected != null) return selected
+                        if (selected != null) {
+                            if (selected.id == currentStationId) {
+                                showCentered("Current station", "Choose another")
+                                Time.sleep(1000)
+                                digits = ""
+                                dirty = true
+                            } else return selected
+                        }
                         else { showCentered("Unknown ID", "Try again"); Time.sleep(1000); digits = ""; dirty = true }
                     }
                     MenuMode.LIST -> return sorted[index]
@@ -182,38 +204,23 @@ object TUI {
         // Mostrar preço e troco
         showCentered("Total:${"%.2f".format(total)}", "")
         Time.sleep(2000)
-        // Iniciar impressão, mostrando estado
-        showCentered("Printing...", "Please wait...")
-        Time.sleep(2000)
 
-        // Aguardar confirmação de impressão (com timeout)
         // Se o utilizador pressionar '#', cancela
-        val startTime = System.currentTimeMillis()
-        val timeout = 5000L // 5 segundos para impressão
-        var prevBottom = "Please wait..."
+        showCentered("Printing...", "Press #=Cancel")
 
-        while (System.currentTimeMillis() - startTime < timeout) {
-            val top = "Printing..."
-            val bottom = "Press #=Cancel"
-            if (bottom != prevBottom) {
-                showCentered(top, bottom)
-                prevBottom = bottom
-            }
-            val key = KBD.waitKey(4000)
-            if (key == '#') {
-                // Utilizador cancelou durante impressão
-                CoinAcceptor.ejectCoins()
-                showCentered("Cancelled", "refund ${"%.2f".format(inserted)}")
-                Time.sleep(1500)
-                return false
-            }
+        val key = KBD.waitKey(4000)
+        if (key == '#') {
+            // Utilizador cancelou durante impressão
+            CoinAcceptor.ejectCoins()
+            showCentered("Cancelled", "refund ${"%.2f".format(inserted)}")
+            Time.sleep(2000)
+            return false
         }
+
+        showCentered("Printing done", "Collect Ticket")
 
         TicketDispenser.activatePrintingTicket(roundTrip, origin.id, dest.id)
 
-        // Impressão concluída, mostrar instruções para recolher bilhete
-        showCentered("Take ticket", "Press any key")
-        KBD.waitKey(5000)
         return true
     }
 }

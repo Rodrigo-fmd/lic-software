@@ -1,5 +1,6 @@
 import isel.leic.utils.Time
 import kotlin.random.Random
+import kotlin.system.exitProcess
 
 private val COIN_ORDER = listOf(2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.05f)
 
@@ -84,7 +85,7 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
 
         when (TUI.waitKey(200)) {
             '#' -> {
-                val dest = TUI.buyMenu(stations)
+                val dest = TUI.buyMenu(stations, currentStation.id)
                 if (dest != null) {
                     TUI.buyPhase(currentStation, dest, stations, testMode = true)
                 }
@@ -105,9 +106,9 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
                 TUI.showCentered("Shutdown", "#=Confirm")
                 if (TUI.waitKey(3000) == '#') {
                     saveStats(stations, stats)
-                    TUI.showCentered("Saving...", "Bye")
-                    Time.sleep(500)
-                    return true
+                    TUI.showBottom("Completed")
+                    Time.sleep(2000)
+                    exitProcess(0)
                 }
             }
             else -> {}
@@ -136,7 +137,7 @@ fun main() {
         else TUI.showCentered("Press # to buy","the ticket" )
 
         if (TUI.waitKey(2000) == '#') {
-            val dest = TUI.buyMenu(stationList)
+            val dest = TUI.buyMenu(stationList, currentStation.id)
             if (dest != null) {
                 val ok = TUI.buyPhase(
                     currentStation,
