@@ -1,8 +1,6 @@
-@file:Suppress("unused")
-
 object CoinDeposit {
 
-    private val coinOrder = listOf(2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.05f)
+     val coinOrder = listOf(2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.05f)
 
     fun load(): MutableMap<Float, Int> {
         val counters = coinOrder.associateWith { 0 }.toMutableMap()

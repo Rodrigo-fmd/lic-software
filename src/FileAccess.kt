@@ -10,10 +10,6 @@ object FileAccess {
         return if (f.exists()) f.readLines() else emptyList()
     }
 
-    fun writeStations(lines: List<String>, filePath: String = STATIONS_FILE) {
-        File(filePath).writeText(lines.joinToString("\n"))
-    }
-
     fun readCoins(filePath: String = COINS_FILE): List<String> {
         val f = File(filePath)
         return if (f.exists()) f.readLines() else emptyList()

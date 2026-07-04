@@ -2,8 +2,6 @@ import isel.leic.utils.Time
 import kotlin.random.Random
 import kotlin.system.exitProcess
 
-private val COIN_ORDER = listOf(2.0f, 1.0f, 0.5f, 0.2f, 0.1f, 0.05f)
-
 private data class StatsState(
     val coinCounters: MutableMap<Float, Int>,
     val ticketCounters: MutableMap<String, Int>
@@ -48,7 +46,7 @@ private fun showCoinCounters(stats: StatsState) {
 
     while (maintenance.on()) {
         if (dirty) {
-            val value = COIN_ORDER[index]
+            val value = CoinDeposit.coinOrder[index]
             val count = stats.coinCounters[value] ?: 0
             TUI.showCentered("Coins", "${"%.2f".format(value)} -> $count")
             dirty = false
@@ -56,13 +54,13 @@ private fun showCoinCounters(stats: StatsState) {
 
         when (TUI.waitKey(200)) {
             'A' -> if (index > 0) { index--; dirty = true }
-            'B' -> if (index < COIN_ORDER.lastIndex) { index++; dirty = true }
+            'B' -> if (index < CoinDeposit.coinOrder.lastIndex) { index++; dirty = true }
             '#', '*' -> return
         }
     }
 }
 
-private fun runMaintenance(currentStation: Station, stations: List<Station>, stats: StatsState): Boolean {
+private fun runMaintenance(currentStation: Station, stations: List<Station>, stats: StatsState) {
     val menuOptions = listOf(
         Pair("#", "Test mode"),
         Pair("A", "Consult Tickets"),
@@ -95,7 +93,7 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
             'C' -> {
                 TUI.showCentered("Reset counters", "*=Confirm")
                 if (TUI.waitKey(3000) == '*') {
-                    for (value in COIN_ORDER) stats.coinCounters[value] = 0
+                    for (value in CoinDeposit.coinOrder) stats.coinCounters[value] = 0
                     for (name in stats.ticketCounters.keys) stats.ticketCounters[name] = 0
                     saveStats(stations, stats)
                     TUI.showCentered("Reset done", "")
@@ -114,7 +112,6 @@ private fun runMaintenance(currentStation: Station, stations: List<Station>, sta
             else -> {}
         }
     }
-    return false
 }
 
 fun main() {
@@ -129,7 +126,7 @@ fun main() {
     while (true) {
 
         if (maintenance.on()) {
-            if (runMaintenance(currentStation, stationList, stats)) return
+            runMaintenance(currentStation, stationList, stats)
             continue
         }
 

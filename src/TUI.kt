@@ -100,6 +100,19 @@ object TUI {
     }
 
     /**
+     * Calcula o preço base (ida) entre origin e dest.
+     */
+    private fun calculateBasePrice(origin: Station, dest: Station, stations: List<Station>): Double {
+        val sorted = stations.sortedBy { it.id }
+        val start = sorted.indexOfFirst { it.id == origin.id }
+        val end   = sorted.indexOfFirst { it.id == dest.id }
+
+        if (start == end) return 0.0
+        return if (start < end) sorted.subList(start + 1, end + 1).sumOf { it.price }
+        else                    sorted.subList(end, start).sumOf { it.price }
+    }
+
+    /**
      * Fase de pagamento usando o CoinAcceptor.
      * Lê moedas em loop até ter valor suficiente.
      * '#' cancela, '*' alterna ida/ida-volta.
@@ -112,14 +125,7 @@ object TUI {
         coinCounters: MutableMap<Float, Int>? = null,
         ticketCounters: MutableMap<String, Int>? = null
     ): Boolean {
-        val sorted = stations.sortedBy { it.id }
-        val start = sorted.indexOfFirst { it.id == origin.id }
-        val end   = sorted.indexOfFirst { it.id == dest.id }
-
-        val basePrice = if (start == end) 0.0 else {
-            if (start < end) sorted.subList(start + 1, end + 1).sumOf { it.price }
-            else             sorted.subList(end, start).sumOf { it.price }
-        }
+        val basePrice = calculateBasePrice(origin, dest, stations)
 
         var roundTrip = false
         var total     = basePrice
@@ -160,11 +166,11 @@ object TUI {
                 else -> { /* ignorar outras teclas */}
             }
 
-            // Ler moeda do CoinAcceptor — retorna o valor em euros ou -1.0
+            // Ler moeda do CoinAcceptor — retorna o valor em euros
             val coinValue = CoinAcceptor.addCoins()
             if (coinValue > 0) {
                 inserted += coinValue
-                // incrementar o contador desta denominação
+                // incrementar o contador desta
                 insertedCoins[coinValue] = (insertedCoins[coinValue] ?: 0) + 1
                 prevTop = "" // forçar atualização do LCD com novo valor
             }
@@ -201,7 +207,7 @@ object TUI {
         // Mostrar destino
         showCentered("Destination", dest.name)
         Time.sleep(2000)
-        // Mostrar preço e troco
+        // Mostrar preço
         showCentered("Total:${"%.2f".format(total)}", "")
         Time.sleep(2000)
 
@@ -217,9 +223,10 @@ object TUI {
             return false
         }
 
-        showCentered("Printing done", "Collect Ticket")
-
+        showCentered("Collect", "Ticket")
         TicketDispenser.activatePrintingTicket(roundTrip, origin.id, dest.id)
+        LCD.clear()
+        showTop("Done")
 
         return true
     }
